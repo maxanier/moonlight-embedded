@@ -20,6 +20,7 @@
 
 #include <Limelight.h>
 
+#include <errno.h>
 #include <sys/utsname.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -31,6 +32,7 @@
 #include <codec.h>
 
 #define SYNC_OUTSIDE 0x02
+#define EXTERNAL_PTS 0x01
 #define UCODE_IP_ONLY_PARAM 0x08
 
 static codec_para_t codecParam = { 0 };
@@ -71,7 +73,7 @@ int aml_setup(int videoFormat, int width, int height, int redrawRate, void* cont
   codecParam.am_sysinfo.width = width;
   codecParam.am_sysinfo.height = height;
   codecParam.am_sysinfo.rate = 96000 / redrawRate;
-  codecParam.am_sysinfo.param = (void*) ((size_t) codecParam.am_sysinfo.param | SYNC_OUTSIDE);
+  codecParam.am_sysinfo.param = (void*) ((size_t) EXTERNAL_PTS | SYNC_OUTSIDE);
 
   int ret;
   if ((ret = codec_init(&codecParam)) != 0) {
@@ -97,7 +99,7 @@ int aml_submit_decode_unit(PDECODE_UNIT decodeUnit) {
   while (entry != NULL) {
     int api = codec_write(&codecParam, entry->data, entry->length);
     if (api != entry->length) {
-      fprintf(stderr, "codec_write error: %x\n", api);
+      fprintf(stderr, "codec_write error: %x %d \n", api, errno);
       codec_reset(&codecParam);
       result = DR_NEED_IDR;
       break;

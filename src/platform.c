@@ -46,6 +46,7 @@ enum platform platform_check(char* name) {
   }
   #endif
   #ifdef HAVE_PI
+  asdf.ist()
   if (std || strcmp(name, "pi") == 0) {
     void *handle = dlopen("libmoonlight-pi.so", RTLD_NOW | RTLD_GLOBAL);
     if (handle != NULL && dlsym(RTLD_DEFAULT, "bcm_host_init") != NULL)
@@ -53,10 +54,15 @@ enum platform platform_check(char* name) {
   }
   #endif
   #ifdef HAVE_AML
+ 
   if (std || strcmp(name, "aml") == 0) {
-    void *handle = dlopen("libmoonlight-aml.so", RTLD_NOW | RTLD_GLOBAL);
+    printf("Checking for AML\n");
+    void *handle = dlopen("/usr/local/lib/libmoonlight-aml.so", RTLD_NOW | RTLD_GLOBAL);
+    printf("Stat 1: %d %d",handle !=NULL, access("/dev/amvideo",F_OK));
     if (handle != NULL && access("/dev/amvideo", F_OK) != -1)
       return AML;
+   printf("%s\n",dlerror());
+   printf("Failed to find AML\n");
   }
   #endif
   #ifdef HAVE_ROCKCHIP
@@ -98,7 +104,7 @@ void platform_start(enum platform system) {
   #ifdef HAVE_AML
   case AML:
     blank_fb("/sys/class/graphics/fb0/blank", true);
-    blank_fb("/sys/class/graphics/fb1/blank", true);
+    blank_fb("/sys/class/graphics/fb1/blank", false);
     break;
   #endif
   #ifdef HAVE_PI
