@@ -104,7 +104,7 @@ void platform_start(enum platform system) {
   #ifdef HAVE_AML
   case AML:
     blank_fb("/sys/class/graphics/fb0/blank", true);
-    blank_fb("/sys/class/graphics/fb1/blank", false);
+    blank_fb("/sys/class/graphics/fb1/blank", true);
     break;
   #endif
   #ifdef HAVE_PI

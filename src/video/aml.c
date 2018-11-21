@@ -30,10 +30,15 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <codec.h>
+#include <string.h>
 
 #define SYNC_OUTSIDE 0x02
 #define EXTERNAL_PTS 0x01
 #define UCODE_IP_ONLY_PARAM 0x08
+
+#define DECODER_BUFFER_SIZE 92*1024
+
+static char* video_frame_buffer;
 
 static codec_para_t codecParam = { 0 };
 
@@ -86,6 +91,14 @@ int aml_setup(int videoFormat, int width, int height, int redrawRate, void* cont
     return -2;
   }
 
+
+
+  video_frame_buffer = malloc(DECODER_BUFFER_SIZE + 32);
+  if (video_frame_buffer == NULL) {
+    fprintf(stderr, "Not enough memory\n");
+    return -1;
+  }
+
   return 0;
 }
 
@@ -95,17 +108,31 @@ void aml_cleanup() {
 
 int aml_submit_decode_unit(PDECODE_UNIT decodeUnit) {
   int result = DR_OK;
+
+  if(decodeUnit->fullLength < DECODER_BUFFER_SIZE){
+
   PLENTRY entry = decodeUnit->bufferList;
+  int length=0;
   while (entry != NULL) {
-    int api = codec_write(&codecParam, entry->data, entry->length);
-    if (api != entry->length) {
+    memcpy(video_frame_buffer+length, entry->data, entry->length);
+    length += entry->length;
+    entry = entry->next;
+  }
+
+
+   if (true) {
+    int api = codec_write(&codecParam, video_frame_buffer, length);
+    if (api != length) {
       fprintf(stderr, "codec_write error: %x %d \n", api, errno);
       codec_reset(&codecParam);
       result = DR_NEED_IDR;
-      break;
     }
 
-    entry = entry->next;
+  }
+  }
+  else{
+    fprintf(stderr,"Video decode buffer to small");
+    exit(1);
   }
   return result;
 }
